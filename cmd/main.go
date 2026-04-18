@@ -15,7 +15,6 @@ import (
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println(err)
-		os.Exit(1)
 	}
 
 	token := os.Getenv("TOKEN")
