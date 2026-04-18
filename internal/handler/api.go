@@ -34,12 +34,7 @@ func (h *BotHandler) RegisterCommand(command string, handler CommandHandler) {
 	h.commands[strings.ToLower(command)] = handler
 }
 
-func (h *BotHandler) Run() {
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-
-	updates := h.bot.GetUpdatesChan(u)
-
+func (h *BotHandler) Run(updates tgbotapi.UpdatesChannel) {
 	for update := range updates {
 		if update.Message == nil {
 			continue
