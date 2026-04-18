@@ -77,7 +77,7 @@ func (h *BotHandler) handleStart(msg *tgbotapi.Message) error {
 }
 
 func (h *BotHandler) handleBoost(msg *tgbotapi.Message) error {
-	result, err := h.service.Boost(msg.From.ID)
+	result, err := h.service.Boost(msg.From.ID, msg.Chat.ID)
 	if err != nil {
 		log.Printf("boost error: %v", err)
 		return h.reply(msg.Chat.ID, "Произошла ошибка, попробуй позже.", msg.MessageID)

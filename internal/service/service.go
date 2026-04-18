@@ -23,20 +23,20 @@ func NewUserService(repository Repository) *UserService {
 	return &UserService{repository: repository}
 }
 
-func (s *UserService) Boost(user int64) (BoostResult, error) {
+func (s *UserService) Boost(user, chat int64) (BoostResult, error) {
 	now := time.Now()
-	u, err := s.repository.GetUser(user)
+	u, err := s.repository.GetUser(user, chat)
 	if err != nil {
 		if !errors.Is(err, repository.NotFound) {
 			return BoostResult{}, err
 		}
 
-		u, err = s.repository.CreateUser(user)
+		u, err = s.repository.CreateUser(user, chat)
 		if err != nil && !errors.Is(err, repository.AlreadyExists) {
 			return BoostResult{}, err
 		}
 		if errors.Is(err, repository.AlreadyExists) {
-			u, err = s.repository.GetUser(user)
+			u, err = s.repository.GetUser(user, chat)
 			if err != nil {
 				return BoostResult{}, err
 			}
@@ -57,16 +57,16 @@ func (s *UserService) Boost(user int64) (BoostResult, error) {
 
 	newLength := u.Length + delta
 	if canBoost {
-		err = s.repository.UpdateUser(user, newLength, now)
+		err = s.repository.UpdateUser(user, chat, newLength, now)
 	} else {
-		err = s.repository.UpdateUserStatistic(user, newLength)
+		err = s.repository.UpdateUserStatistic(user, chat, newLength)
 	}
 	if err != nil {
 		return BoostResult{}, err
 	}
 
 	rank := 1
-	users := s.repository.ListUsers()
+	users := s.repository.ListUsers(chat)
 	for _, candidate := range users {
 		if candidate.ID == user {
 			continue

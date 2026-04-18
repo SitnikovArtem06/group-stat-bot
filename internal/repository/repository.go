@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type UserInMemory map[int64]model.User
+type UserInMemory map[int64]map[int64]model.User
 
 type UserRepository struct {
 	m  UserInMemory
@@ -14,35 +14,37 @@ type UserRepository struct {
 }
 
 func NewUserRepository() *UserRepository {
-
-	Um := make(map[int64]model.User)
-
 	return &UserRepository{
-		m:  Um,
+		m:  make(UserInMemory),
 		mu: sync.RWMutex{},
 	}
-
 }
 
-func (r *UserRepository) CreateUser(user int64) (model.User, error) {
+func (r *UserRepository) CreateUser(user, chat int64) (model.User, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if _, ok := r.m[user]; ok {
+	chatUsers, ok := r.m[chat]
+	if !ok {
+		chatUsers = make(map[int64]model.User)
+		r.m[chat] = chatUsers
+	}
+
+	if _, ok := chatUsers[user]; ok {
 		return model.User{}, AlreadyExists
 	}
 
 	u := model.User{}
-	r.m[user] = u
+	chatUsers[user] = u
 	return u, nil
 }
 
-func (r *UserRepository) UpdateUser(user int64, newLength int64, newTime time.Time) error {
+func (r *UserRepository) UpdateUser(user, chat, newLength int64, newTime time.Time) error {
 	r.mu.Lock()
 
 	defer r.mu.Unlock()
 
-	u, ok := r.m[user]
+	u, ok := r.m[chat][user]
 	if !ok {
 		return NotFound
 	}
@@ -50,32 +52,32 @@ func (r *UserRepository) UpdateUser(user int64, newLength int64, newTime time.Ti
 	u.Length = newLength
 	u.LastUpdate = newTime
 
-	r.m[user] = u
+	r.m[chat][user] = u
 
 	return nil
 }
 
-func (r *UserRepository) UpdateUserStatistic(user int64, newLength int64) error {
+func (r *UserRepository) UpdateUserStatistic(user, chat, newLength int64) error {
 	r.mu.Lock()
 
 	defer r.mu.Unlock()
 
-	u, ok := r.m[user]
+	u, ok := r.m[chat][user]
 	if !ok {
 		return NotFound
 	}
 
 	u.Length = newLength
-	r.m[user] = u
+	r.m[chat][user] = u
 
 	return nil
 }
 
-func (r *UserRepository) GetUser(user int64) (model.User, error) {
+func (r *UserRepository) GetUser(user, chat int64) (model.User, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	u, ok := r.m[user]
+	u, ok := r.m[chat][user]
 	if !ok {
 		return model.User{}, NotFound
 	}
@@ -83,12 +85,13 @@ func (r *UserRepository) GetUser(user int64) (model.User, error) {
 	return u, nil
 }
 
-func (r *UserRepository) ListUsers() []model.UserRecord {
+func (r *UserRepository) ListUsers(chat int64) []model.UserRecord {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	users := make([]model.UserRecord, 0, len(r.m))
-	for id, u := range r.m {
+	chatUsers := r.m[chat]
+	users := make([]model.UserRecord, 0, len(chatUsers))
+	for id, u := range chatUsers {
 		users = append(users, model.UserRecord{
 			ID:   id,
 			User: u,
