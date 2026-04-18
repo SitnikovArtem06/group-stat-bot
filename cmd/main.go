@@ -7,10 +7,10 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 	"log"
-	"net/http"
-	"net/url"
+	//"net/http"
+	//"net/url"
 	"os"
-	"time"
+	//"time"
 )
 
 func main() {
@@ -31,7 +31,7 @@ func main() {
 	//	os.Exit(1)
 	//}
 
-	bot, err := tgbotapi.NewBotAPIWithClient(token, "https://api.telegram.org/bot%s/%s", client)
+	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
